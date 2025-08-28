@@ -33,5 +33,5 @@ resource "local_file" "example" {
     tags                     = local.common_tags
   })
 
-  filename = "${path.module}/generated_example.txt"
+  filename = "${var.output_directory}/generated_example.txt"
 }

@@ -43,3 +43,9 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "output_directory" {
+  description = "The directory where generated files will be placed"
+  type        = string
+  default     = "/tmp"
+}
