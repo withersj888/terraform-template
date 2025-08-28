@@ -1,0 +1,189 @@
+name: Terraform Module CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - '**.tf'
+      - '**.tfvars'
+      - '.github/workflows/terraform.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '**.tf'
+      - '**.tfvars'
+      - '.github/workflows/terraform.yml'
+
+env:
+  TF_VERSION: '1.6.0'
+  TFLINT_VERSION: 'v0.54.0'
+  CHECKOV_VERSION: '3.1.34'
+
+jobs:
+  terraform-checks:
+    name: Terraform Checks
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TF_VERSION }}
+
+    - name: Terraform Format Check
+      run: |
+        terraform fmt -check -recursive
+        if [ $? -ne 0 ]; then
+          echo "❌ Terraform files are not properly formatted"
+          echo "Run 'terraform fmt -recursive' to fix formatting issues"
+          exit 1
+        fi
+
+    - name: Terraform Init
+      run: terraform init -backend=false
+
+    - name: Terraform Validate
+      run: terraform validate
+
+    - name: Setup TFLint
+      uses: terraform-linters/setup-tflint@v4
+      with:
+        tflint_version: ${{ env.TFLINT_VERSION }}
+
+    - name: Show TFLint version
+      run: tflint --version
+
+    - name: Init TFLint
+      run: tflint --init
+
+    - name: Run TFLint
+      run: tflint --format compact
+
+    - name: Run Checkov
+      uses: bridgecrewio/checkov-action@master
+      with:
+        directory: .
+        framework: terraform
+        output_format: sarif
+        output_file_path: reports/checkov.sarif
+        quiet: true
+        compact: true
+
+    - name: Upload Checkov results to GitHub Advanced Security
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: reports/checkov.sarif
+
+    - name: Run tfsec
+      uses: aquasecurity/tfsec-action@v1.0.3
+      with:
+        format: sarif
+        soft_fail: true
+        additional_args: --minimum-severity MEDIUM
+
+    - name: Upload tfsec results to GitHub Advanced Security
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: tfsec.sarif
+
+  documentation:
+    name: Documentation Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Render terraform docs
+      uses: terraform-docs/gh-actions@v1.0.0
+      with:
+        working-dir: .
+        output-file: README.md
+        output-method: inject
+        git-push: false
+        config-file: .terraform-docs.yml
+
+    - name: Check if documentation is up to date
+      run: |
+        if ! git diff --quiet HEAD -- README.md; then
+          echo "❌ Documentation is not up to date"
+          echo "Please run 'terraform-docs .' and commit the changes"
+          git diff
+          exit 1
+        fi
+
+  examples:
+    name: Examples Validation
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        example: [basic, advanced]
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TF_VERSION }}
+
+    - name: Terraform Init - ${{ matrix.example }}
+      run: |
+        if [ -d "examples/${{ matrix.example }}" ]; then
+          cd examples/${{ matrix.example }}
+          terraform init -backend=false
+        else
+          echo "Example directory examples/${{ matrix.example }} does not exist, skipping"
+          exit 0
+        fi
+
+    - name: Terraform Validate - ${{ matrix.example }}
+      run: |
+        if [ -d "examples/${{ matrix.example }}" ]; then
+          cd examples/${{ matrix.example }}
+          terraform validate
+        fi
+
+    - name: Terraform Plan - ${{ matrix.example }}
+      run: |
+        if [ -d "examples/${{ matrix.example }}" ]; then
+          cd examples/${{ matrix.example }}
+          terraform plan -input=false
+        fi
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: [terraform-checks, documentation, examples]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install semantic-release
+      run: |
+        npm install -g semantic-release
+        npm install -g @semantic-release/changelog
+        npm install -g @semantic-release/git
+
+    - name: Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: semantic-release

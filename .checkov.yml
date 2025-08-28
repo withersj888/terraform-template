@@ -1,0 +1,26 @@
+# Checkov configuration
+framework:
+  - terraform
+
+quiet: true
+compact: true
+
+# Skip specific checks if needed
+# skip-check:
+#   - CKV_AWS_18  # Example: Ensure S3 bucket has access logging configured
+
+# Custom policies directory
+# external-checks-dir: policies/
+
+# Output format options: cli, json, junitxml, github_failed_only, sarif, csv
+output:
+  - cli
+
+# Download external modules
+download-external-modules: true
+
+# Check severity levels: LOW, MEDIUM, HIGH, CRITICAL
+check:
+  - MEDIUM
+  - HIGH
+  - CRITICAL
