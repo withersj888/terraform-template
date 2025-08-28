@@ -64,6 +64,9 @@ jobs:
     - name: Run TFLint
       run: tflint --format compact
 
+    - name: Create reports directory
+      run: mkdir -p reports
+
     - name: Run Checkov
       uses: bridgecrewio/checkov-action@master
       with:
@@ -76,7 +79,7 @@ jobs:
 
     - name: Upload Checkov results to GitHub Advanced Security
       uses: github/codeql-action/upload-sarif@v3
-      if: always()
+      if: always() && hashFiles('reports/checkov.sarif') != ''
       with:
         sarif_file: reports/checkov.sarif
 
@@ -84,14 +87,21 @@ jobs:
       uses: aquasecurity/tfsec-action@v1.0.3
       with:
         format: sarif
+        output_file: reports/tfsec.sarif
         soft_fail: true
         additional_args: --minimum-severity MEDIUM
 
+    - name: Debug - List reports directory
+      if: always()
+      run: |
+        echo "Contents of reports directory:"
+        ls -la reports/ || echo "Reports directory not found"
+
     - name: Upload tfsec results to GitHub Advanced Security
       uses: github/codeql-action/upload-sarif@v3
-      if: always()
+      if: always() && hashFiles('reports/tfsec.sarif') != ''
       with:
-        sarif_file: tfsec.sarif
+        sarif_file: reports/tfsec.sarif
 
   documentation:
     name: Documentation Check
@@ -101,14 +111,17 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
+    - name: Install terraform-docs
+      run: |
+        curl -sSLo terraform-docs.tar.gz https://terraform-docs.io/dl/v0.17.0/terraform-docs-v0.17.0-linux-amd64.tar.gz
+        tar -xzf terraform-docs.tar.gz
+        chmod +x terraform-docs
+        sudo mv terraform-docs /usr/local/bin/
+        terraform-docs --version
+
     - name: Render terraform docs
-      uses: terraform-docs/gh-actions@v1.0.0
-      with:
-        working-dir: .
-        output-file: README.md
-        output-method: inject
-        git-push: false
-        config-file: .terraform-docs.yml
+      run: |
+        terraform-docs markdown table --config .terraform-docs.yml --output-mode inject --output-file README.md .
 
     - name: Check if documentation is up to date
       run: |
@@ -170,7 +183,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        token: ${{ secrets.SEMANTIC_RELEASE_TOKEN }}
+        token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -185,5 +198,5 @@ jobs:
 
     - name: Release
       env:
-        GITHUB_TOKEN: ${{ secrets.SEMANTIC_RELEASE_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: semantic-release
