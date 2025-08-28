@@ -35,29 +35,16 @@ sections:
   show: []
 
 content: |-
-  ## Requirements
-
   {{ .Requirements }}
-
-  ## Providers
 
   {{ .Providers }}
 
   {{- if .Modules }}
-
-  ## Modules
-
   {{ .Modules }}
   {{- end }}
 
-  ## Resources
-
   {{ .Resources }}
 
-  ## Inputs
-
   {{ .Inputs }}
-
-  ## Outputs
 
   {{ .Outputs }}

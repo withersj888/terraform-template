@@ -136,8 +136,6 @@ terraform plan
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
-## Requirements
-
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0 |
@@ -146,20 +144,13 @@ terraform plan
 
 ## Providers
 
-## Providers
-
 | Name | Version |
 |------|---------|
 | <a name="provider_local"></a> [local](#provider\_local) | 2.5.3 |
 | <a name="provider_random"></a> [random](#provider\_random) | 3.7.2 |
-
-## Modules
-
 ## Modules
 
 No modules.
-
-## Resources
 
 ## Resources
 
@@ -167,8 +158,6 @@ No modules.
 |------|------|
 | [local_file.example](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
 | [random_id.example](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) | resource |
-
-## Inputs
 
 ## Inputs
 
@@ -180,8 +169,6 @@ No modules.
 | <a name="input_output_directory"></a> [output\_directory](#input\_output\_directory) | The directory where generated files will be placed | `string` | `"/tmp"` | no |
 | <a name="input_project_name"></a> [project\_name](#input\_project\_name) | Name of the project | `string` | n/a | yes |
 | <a name="input_tags"></a> [tags](#input\_tags) | Additional tags to apply to all resources | `map(string)` | `{}` | no |
-
-## Outputs
 
 ## Outputs
 
