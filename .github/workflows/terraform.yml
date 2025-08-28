@@ -121,11 +121,11 @@ jobs:
 
     - name: Render terraform docs
       run: |
-        terraform-docs markdown table --config .terraform-docs.yml --output-mode inject --output-file README.md .
+        terraform-docs markdown table --config .terraform-docs.yml --output-mode inject --output-file TERRAFORM_DOCS.md .
 
     - name: Check if documentation is up to date
       run: |
-        if ! git diff --quiet HEAD -- README.md; then
+        if ! git diff --quiet HEAD -- TERRAFORM_DOCS.md; then
           echo "❌ Documentation is not up to date"
           echo "Please run 'terraform-docs .' and commit the changes"
           git diff

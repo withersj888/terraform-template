@@ -4,7 +4,7 @@ version: "0.17"
 formatter: "markdown table"
 
 output:
-  file: "README.md"
+  file: "TERRAFORM_DOCS.md"
   mode: inject
   template: |-
     <!-- BEGIN_TF_DOCS -->
@@ -40,6 +40,7 @@ content: |-
   {{ .Providers }}
 
   {{- if .Modules }}
+
   {{ .Modules }}
   {{- end }}
 
