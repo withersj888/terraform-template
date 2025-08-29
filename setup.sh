@@ -102,6 +102,16 @@ if command_exists tfsec; then
     tfsec . --format lovely --no-colour
 fi
 
+# Run Terraform tests if available
+if command_exists terraform && [ -d "tests" ] && [ "$(find tests -name "*.tftest.hcl" 2>/dev/null | wc -l)" -gt 0 ]; then
+    echo "🧪 Running Terraform tests..."
+    terraform test
+    echo "✅ Terraform tests completed"
+else
+    echo "⚠️  No Terraform tests found in tests/ directory"
+    echo "    Add at least one .tftest.hcl file to ensure module quality"
+fi
+
 echo ""
 echo "🎉 Setup complete! Your Terraform module development environment is ready."
 echo ""
@@ -113,6 +123,13 @@ echo "4. Update the README.md with your module's documentation"
 echo "5. Add working examples in the examples/ directory"
 echo "6. Run 'terraform-docs .' to generate documentation"
 echo "7. Test your module with the provided examples"
+echo "8. Add comprehensive tests in the tests/ directory"
+echo "9. Run 'terraform test' to validate your module behaviour"
+echo ""
+echo "🧪 Testing Commands:"
+echo "- 'terraform test' - Run all Terraform tests"
+echo "- 'terraform test -verbose' - Run tests with detailed output"
+echo "- Add tests in tests/ directory with .tftest.hcl extension"
 echo ""
 echo "📖 See TERRAFORM_MODULE_STANDARDS.md for detailed guidelines."
 echo "🔧 Run 'pre-commit run --all-files' to validate all files."
