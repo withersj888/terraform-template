@@ -10,7 +10,7 @@ This directory contains tests for the Terraform module using Terraform's native 
 
 ## Running Tests
 
-```bash
+```powershell
 # Run all tests
 terraform test
 

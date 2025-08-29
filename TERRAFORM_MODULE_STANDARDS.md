@@ -20,6 +20,7 @@ This document outlines the standards and best practices for creating high-qualit
 Every Terraform module should follow this standardised directory structure:
 
 ```
+```
 terraform-module-name/
 ├── README.md                 # Primary documentation
 ├── main.tf                   # Primary resource definitions
@@ -28,6 +29,7 @@ terraform-module-name/
 ├── versions.tf               # Provider and Terraform version constraints
 ├── locals.tf                 # Local value definitions (if needed)
 ├── data.tf                   # Data source definitions (if needed)
+├── setup.ps1                 # PowerShell setup script for development environment
 ├── CHANGELOG.md              # Release notes and version history
 ├── LICENSE                   # Module licence
 ├── .gitignore               # Git ignore rules
@@ -46,8 +48,15 @@ terraform-module-name/
 │       ├── outputs.tf
 │       └── README.md
 ├── tests/                    # Automated tests
-│   ├── unit/
-│   └── integration/
+│   ├── defaults.tftest.hcl   # Basic module validation test
+│   └── README.md             # Testing documentation
+├── templates/                # Template files (if used)
+└── .github/                  # GitHub specific files
+    ├── workflows/
+    │   └── terraform.yml     # CI/CD pipeline
+    └── ISSUE_TEMPLATE/
+        └── bug_report.md     # Bug report template
+```
 └── modules/                  # Sub-modules (if applicable)
     └── sub-module-name/
         ├── main.tf
@@ -276,7 +285,7 @@ run "basic_validation" {
 
 ### Test Execution Commands
 
-```bash
+```powershell
 # Run all tests
 terraform test
 
@@ -411,7 +420,7 @@ resource "random_password" "database" {
 ```
 
 ### Git Tagging Strategy
-```bash
+```powershell
 git tag -a v1.2.0 -m "Release version 1.2.0"
 git push origin v1.2.0
 ```
