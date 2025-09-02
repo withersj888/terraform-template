@@ -1,6 +1,6 @@
 terraform {
   # Require Terraform 1.6.0+ for native testing support
-  # Upper bound prevents breaking changes in major versions
+  # Upper bound is a precaution to prevent future breaking changes if Terraform 2.0.0+ is released
   required_version = ">= 1.6.0, < 2.0.0"
 
   required_providers {
