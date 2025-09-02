@@ -6,12 +6,24 @@ on:
     paths:
       - '**.tf'
       - '**.tfvars'
+      - '**.tftest.hcl'
+      - '.terraform-docs.yml'
+      - '.tflint.hcl'
+      - '.pre-commit-config.yaml'
+      - 'versions.tf'
+      - 'tests/**'
       - '.github/workflows/terraform.yml'
   pull_request:
     branches: [ main ]
     paths:
       - '**.tf'
       - '**.tfvars'
+      - '**.tftest.hcl'
+      - '.terraform-docs.yml'
+      - '.tflint.hcl'
+      - '.pre-commit-config.yaml'
+      - 'versions.tf'
+      - 'tests/**'
       - '.github/workflows/terraform.yml'
 
 env:
