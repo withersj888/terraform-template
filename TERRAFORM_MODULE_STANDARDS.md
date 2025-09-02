@@ -20,6 +20,7 @@ This document outlines the standards and best practices for creating high-qualit
 Every Terraform module should follow this standardised directory structure:
 
 ```
+```
 terraform-module-name/
 ├── README.md                 # Primary documentation
 ├── main.tf                   # Primary resource definitions
@@ -28,6 +29,7 @@ terraform-module-name/
 ├── versions.tf               # Provider and Terraform version constraints
 ├── locals.tf                 # Local value definitions (if needed)
 ├── data.tf                   # Data source definitions (if needed)
+├── setup.ps1                 # PowerShell setup script for development environment
 ├── CHANGELOG.md              # Release notes and version history
 ├── LICENSE                   # Module licence
 ├── .gitignore               # Git ignore rules
@@ -46,8 +48,15 @@ terraform-module-name/
 │       ├── outputs.tf
 │       └── README.md
 ├── tests/                    # Automated tests
-│   ├── unit/
-│   └── integration/
+│   ├── defaults.tftest.hcl   # Basic module validation test
+│   └── README.md             # Testing documentation
+├── templates/                # Template files (if used)
+└── .github/                  # GitHub specific files
+    ├── workflows/
+    │   └── terraform.yml     # CI/CD pipeline
+    └── ISSUE_TEMPLATE/
+        └── bug_report.md     # Bug report template
+```
 └── modules/                  # Sub-modules (if applicable)
     └── sub-module-name/
         ├── main.tf
@@ -234,29 +243,124 @@ resource "aws_internet_gateway" "main" {
 
 ## Testing Requirements
 
-### Unit Tests
-- Test variable validation
-- Test resource creation logic
-- Use tools like `terratest` or `terraform-compliance`
+Modern Terraform modules should use Terraform's native testing framework introduced in Terraform 1.6.0+. This provides first-class testing support without external dependencies.
 
-### Integration Tests
-- Test complete module deployment
-- Verify resource creation and configuration
-- Test module outputs
+### Minimum Testing Requirements
 
-### Example Test Structure
+Every Terraform module **must** include at least one test file to ensure basic functionality and prevent regressions.
+
+#### Required Test Structure
 ```
 tests/
-├── unit/
-│   ├── variables_test.go
-│   └── outputs_test.go
-├── integration/
-│   ├── basic_test.go
-│   └── advanced_test.go
-└── fixtures/
-    ├── basic/
-    └── advanced/
+└── defaults.tftest.hcl        # Basic module validation test
 ```
+
+### Basic Test Implementation
+
+#### Essential Test Coverage
+```hcl
+# tests/defaults.tftest.hcl
+run "basic_validation" {
+  command = plan
+
+  variables {
+    # Provide realistic test values
+    environment  = "dev"
+    project_name = "test-project"
+  }
+
+  # Test that module creates resources
+  assert {
+    condition     = length(terraform.planned_values.root_module.resources) > 0
+    error_message = "Module should plan to create at least one resource"
+  }
+
+  # Test variable validation
+  assert {
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "Environment must be valid"
+  }
+}
+```
+
+### Test Execution Commands
+
+```powershell
+# Run all tests
+terraform test
+
+# Run with verbose output
+terraform test -verbose
+```
+
+### CI/CD Integration
+
+The GitHub Actions pipeline **will fail** if:
+- No `.tftest.hcl` files exist in the `tests/` directory
+- Any test fails
+- Terraform syntax is invalid
+
+This ensures modules are properly tested before deployment.
+
+### Expanding Tests
+
+As you develop your module, consider adding:
+
+#### Additional Test Scenarios
+- **Edge Cases**: Test boundary conditions
+- **Integration Tests**: Use `command = apply` for real resource testing
+- **Error Conditions**: Test validation failures with `expect_failures`
+
+#### Advanced Test Patterns
+```hcl
+# Test with different configurations
+run "advanced_config" {
+  command = plan
+
+  variables {
+    environment = "prod"
+    enable_feature = true
+    custom_config = {
+      setting = "value"
+    }
+  }
+
+  # Validate advanced configuration
+  assert {
+    condition     = var.enable_feature == true
+    error_message = "Advanced features should be enabled"
+  }
+}
+
+# Test validation failures
+run "invalid_input" {
+  command = plan
+
+  variables {
+    environment = "invalid"
+  }
+
+  expect_failures = [
+    var.environment
+  ]
+}
+```
+
+### Testing Best Practices
+
+#### ✅ Do
+- Start with a simple basic test
+- Use realistic test data
+- Write clear error messages
+- Test core module functionality
+- Add tests when adding features
+
+#### ❌ Don't
+- Skip testing entirely
+- Create overly complex initial tests
+- Test trivial functionality
+- Ignore test failures
+- Hardcode sensitive values in tests
 
 ## Security Best Practices
 
@@ -316,7 +420,7 @@ resource "random_password" "database" {
 ```
 
 ### Git Tagging Strategy
-```bash
+```powershell
 git tag -a v1.2.0 -m "Release version 1.2.0"
 git push origin v1.2.0
 ```

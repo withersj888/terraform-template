@@ -23,6 +23,9 @@ jobs:
   terraform-checks:
     name: Terraform Checks
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: pwsh
 
     steps:
     - name: Checkout
@@ -37,12 +40,17 @@ jobs:
 
     - name: Terraform Format Check
       run: |
+        Write-Host "🔍 Checking Terraform formatting..." -ForegroundColor Blue
+
         terraform fmt -check -recursive
-        if [ $? -ne 0 ]; then
-          echo "❌ Terraform files are not properly formatted"
-          echo "Run 'terraform fmt -recursive' to fix formatting issues"
+
+        if ($LASTEXITCODE -eq 0) {
+          Write-Host "✅ All Terraform files are properly formatted" -ForegroundColor Green
+        } else {
+          Write-Host "❌ Terraform files are not properly formatted" -ForegroundColor Red
+          Write-Host "Run 'terraform fmt -recursive' to fix formatting issues" -ForegroundColor Yellow
           exit 1
-        fi
+        }
 
     - name: Terraform Init
       run: terraform init -backend=false
@@ -65,7 +73,7 @@ jobs:
       run: tflint --format compact
 
     - name: Create reports directory
-      run: mkdir -p reports
+      run: New-Item -ItemType Directory -Path "reports" -Force
 
     - name: Run Checkov
       uses: bridgecrewio/checkov-action@master
@@ -94,8 +102,12 @@ jobs:
     - name: Debug - List reports directory
       if: always()
       run: |
-        echo "Contents of reports directory:"
-        ls -la reports/ || echo "Reports directory not found"
+        Write-Host "Contents of reports directory:"
+        if (Test-Path "reports") {
+          Get-ChildItem -Path "reports" -Force
+        } else {
+          Write-Host "Reports directory not found"
+        }
 
     - name: Upload tfsec results to GitHub Advanced Security
       uses: github/codeql-action/upload-sarif@v3
@@ -106,6 +118,9 @@ jobs:
   documentation:
     name: Documentation Check
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: pwsh
 
     steps:
     - name: Checkout
@@ -113,11 +128,42 @@ jobs:
 
     - name: Install terraform-docs
       run: |
-        curl -sSLo terraform-docs.tar.gz https://terraform-docs.io/dl/v0.17.0/terraform-docs-v0.17.0-linux-amd64.tar.gz
-        tar -xzf terraform-docs.tar.gz
-        chmod +x terraform-docs
-        sudo mv terraform-docs /usr/local/bin/
-        terraform-docs --version
+        $version = "v0.17.0"
+        $url = "https://terraform-docs.io/dl/$version/terraform-docs-$version-linux-amd64.tar.gz"
+        $tempDir = "terraform-docs-temp"
+
+        try {
+          # Download and extract to temporary directory
+          Write-Host "Downloading terraform-docs $version..." -ForegroundColor Blue
+          Invoke-WebRequest -Uri $url -OutFile "terraform-docs.tar.gz"
+
+          Write-Host "Extracting to temporary directory..." -ForegroundColor Blue
+          New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+          tar -xzf "terraform-docs.tar.gz" -C $tempDir
+
+          # Copy only the executable to current directory
+          Write-Host "Installing terraform-docs executable..." -ForegroundColor Blue
+          Copy-Item -Path "$tempDir/terraform-docs" -Destination "." -Force
+          chmod +x "./terraform-docs"
+
+          # Clean up temporary files
+          Write-Host "Cleaning up temporary files..." -ForegroundColor Blue
+          Remove-Item -Path "terraform-docs.tar.gz" -Force
+          Remove-Item -Path $tempDir -Recurse -Force
+
+          # Add current directory to PATH and verify installation
+          $env:PATH = "$PWD`:$env:PATH"
+          # Also set PATH for subsequent steps in the job
+          "$PWD" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+          Write-Host "Verifying installation..." -ForegroundColor Blue
+          ./terraform-docs --version
+          Write-Host "✅ terraform-docs installed successfully!" -ForegroundColor Green
+        }
+        catch {
+          Write-Host "❌ Failed to install terraform-docs: $($_.Exception.Message)" -ForegroundColor Red
+          exit 1
+        }
 
     - name: Render terraform docs
       run: |
@@ -125,16 +171,87 @@ jobs:
 
     - name: Check if documentation is up to date
       run: |
-        if ! git diff --quiet HEAD -- TERRAFORM_DOCS.md; then
-          echo "❌ Documentation is not up to date"
-          echo "Please run 'terraform-docs .' and commit the changes"
-          git diff
+        Write-Host "🔍 Checking if documentation is up to date..." -ForegroundColor Blue
+
+        git diff --quiet HEAD -- TERRAFORM_DOCS.md
+
+        if ($LASTEXITCODE -eq 0) {
+          Write-Host "✅ Documentation is up to date" -ForegroundColor Green
+        } else {
+          Write-Host "❌ Documentation is not up to date" -ForegroundColor Red
+          Write-Host "Please run 'terraform-docs .' and commit the changes" -ForegroundColor Yellow
+          git diff TERRAFORM_DOCS.md
           exit 1
-        fi
+        }
+
+  terraform-tests:
+    name: Terraform Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: ${{ env.TF_VERSION }}
+
+    - name: Terraform Init
+      run: terraform init -backend=false
+
+    - name: Display Terraform and Provider Information
+      run: |
+        Write-Host "🔍 Terraform and Provider Information:" -ForegroundColor Blue
+        terraform version
+        Write-Host "`nProvider versions:" -ForegroundColor Blue
+        terraform providers
+        Write-Host "`nModule validation:" -ForegroundColor Blue
+        terraform validate
+
+    - name: Check for test files
+      run: |
+        Write-Host "🔍 Checking for Terraform test files..." -ForegroundColor Blue
+        $testFiles = @(Get-ChildItem -Path "tests" -Filter "*.tftest.hcl" -ErrorAction SilentlyContinue)
+
+        if ($testFiles.Count -eq 0) {
+          Write-Host "❌ No Terraform test files found in tests/ directory" -ForegroundColor Red
+          Write-Host "Please add at least one .tftest.hcl file to ensure module quality" -ForegroundColor Yellow
+          exit 1
+        } else {
+          Write-Host "✅ Found $($testFiles.Count) test file(s)" -ForegroundColor Green
+        }
+
+    - name: Run Terraform Tests
+      run: |
+        Write-Host "🧪 Running Terraform native tests..." -ForegroundColor Blue
+
+        # Run terraform test and capture output
+        terraform test -verbose
+
+        if ($LASTEXITCODE -eq 0) {
+          Write-Host "✅ All Terraform tests passed!" -ForegroundColor Green
+        } else {
+          Write-Host "❌ Terraform tests failed (Exit code: $LASTEXITCODE)" -ForegroundColor Red
+          exit 1
+        }
+
+    - name: Test Summary
+      run: |
+        Write-Host "📊 Test Summary:" -ForegroundColor Blue
+        $testFiles = @(Get-ChildItem -Path "tests" -Filter "*.tftest.hcl")
+        Write-Host "- Total test files: $($testFiles.Count)" -ForegroundColor White
+        Write-Host "- Test execution: ✅ Completed successfully" -ForegroundColor Green
 
   examples:
     name: Examples Validation
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: pwsh
     strategy:
       matrix:
         example: [basic, advanced]
@@ -150,32 +267,35 @@ jobs:
 
     - name: Terraform Init - ${{ matrix.example }}
       run: |
-        if [ -d "examples/${{ matrix.example }}" ]; then
-          cd examples/${{ matrix.example }}
+        if (Test-Path "examples/${{ matrix.example }}") {
+          Set-Location "examples/${{ matrix.example }}"
           terraform init -backend=false
-        else
-          echo "Example directory examples/${{ matrix.example }} does not exist, skipping"
+        } else {
+          Write-Host "Example directory examples/${{ matrix.example }} does not exist, skipping"
           exit 0
-        fi
+        }
 
     - name: Terraform Validate - ${{ matrix.example }}
       run: |
-        if [ -d "examples/${{ matrix.example }}" ]; then
-          cd examples/${{ matrix.example }}
+        if (Test-Path "examples/${{ matrix.example }}") {
+          Set-Location "examples/${{ matrix.example }}"
           terraform validate
-        fi
+        }
 
     - name: Terraform Plan - ${{ matrix.example }}
       run: |
-        if [ -d "examples/${{ matrix.example }}" ]; then
-          cd examples/${{ matrix.example }}
+        if (Test-Path "examples/${{ matrix.example }}") {
+          Set-Location "examples/${{ matrix.example }}"
           terraform plan -input=false
-        fi
+        }
 
   release:
     name: Release
-    runs-on: ubuntu-latest
-    needs: [terraform-checks, documentation, examples]
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    needs: [terraform-checks, documentation, terraform-tests, examples]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:

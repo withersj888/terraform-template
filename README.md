@@ -21,10 +21,13 @@ This template follows the standard Terraform module structure:
 ├── variables.tf            # Input variable declarations
 ├── outputs.tf             # Output declarations
 ├── versions.tf            # Provider and Terraform version constraints
+├── setup.ps1              # PowerShell setup script for development environment
 ├── templates/             # Template files (if needed)
 ├── examples/              # Usage examples
 │   ├── basic/            # Basic usage example
 │   └── advanced/         # Advanced usage example
+├── tests/                # Terraform native tests
+│   └── defaults.tftest.hcl # Basic module validation test
 ├── .github/              # GitHub templates and workflows
 ├── .terraform-docs.yml   # Terraform-docs configuration
 ├── .tflint.hcl          # TFLint configuration
@@ -87,8 +90,22 @@ This template includes comprehensive documentation standards. See [`TERRAFORM_MO
 
 ## Development Setup
 
+### Automated Setup (Recommended)
+Run the setup script to automatically configure your development environment:
+
+**Windows/PowerShell:**
+```powershell
+.\setup.ps1
+```
+
+**Linux/macOS/bash:**
+```bash
+./setup.sh
+```
+
+### Manual Setup
 1. **Install pre-commit hooks**:
-   ```bash
+   ```powershell
    pip install pre-commit
    pre-commit install
    ```
@@ -101,7 +118,7 @@ This template includes comprehensive documentation standards. See [`TERRAFORM_MO
    - [tfsec](https://aquasecurity.github.io/tfsec/v1.28.1/getting-started/installation/)
 
 3. **Run validation**:
-   ```bash
+   ```powershell
    terraform fmt -recursive
    terraform init
    terraform validate
