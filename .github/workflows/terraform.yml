@@ -15,8 +15,11 @@ on:
       - '.github/workflows/terraform.yml'
 
 env:
+  # renovate: datasource=github-releases depName=hashicorp/terraform
   TF_VERSION: '1.6.0'
+  # renovate: datasource=github-releases depName=terraform-linters/tflint
   TFLINT_VERSION: 'v0.54.0'
+  # renovate: datasource=pypi depName=checkov
   CHECKOV_VERSION: '3.1.34'
 
 jobs:
@@ -128,6 +131,7 @@ jobs:
 
     - name: Install terraform-docs
       run: |
+        # renovate: datasource=github-releases depName=terraform-docs/terraform-docs
         $version = "v0.17.0"
         $url = "https://terraform-docs.io/dl/$version/terraform-docs-$version-linux-amd64.tar.gz"
         $tempDir = "terraform-docs-temp"
@@ -308,6 +312,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
+        # renovate: datasource=node-version depName=node
         node-version: '18'
 
     - name: Install semantic-release

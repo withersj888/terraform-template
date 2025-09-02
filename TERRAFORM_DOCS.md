@@ -9,9 +9,9 @@ This file contains the auto-generated documentation for the Terraform module var
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0 |
-| <a name="requirement_local"></a> [local](#requirement\_local) | >= 2.0 |
-| <a name="requirement_random"></a> [random](#requirement\_random) | >= 3.0 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.6.0, < 2.0.0 |
+| <a name="requirement_local"></a> [local](#requirement\_local) | >= 2.5.0, < 3.0.0 |
+| <a name="requirement_random"></a> [random](#requirement\_random) | >= 3.7.0, < 4.0.0 |
 
 ## Providers
 
