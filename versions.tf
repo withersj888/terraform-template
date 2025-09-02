@@ -4,10 +4,10 @@ terraform {
   required_version = ">= 1.6.0, < 2.0.0"
 
   required_providers {
-    local = {
-      source = "hashicorp/local"
+    null = {
+      source = "hashicorp/null"
       # Pin to specific version range for stability
-      version = ">= 2.5.0, < 3.0.0"
+      version = ">= 3.2.0, < 4.0.0"
     }
     random = {
       source = "hashicorp/random"
