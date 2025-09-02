@@ -9,15 +9,15 @@ This file contains the auto-generated documentation for the Terraform module var
 
 | Name | Version |
 |------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.0 |
-| <a name="requirement_local"></a> [local](#requirement\_local) | >= 2.0 |
-| <a name="requirement_random"></a> [random](#requirement\_random) | >= 3.0 |
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.6.0, < 2.0.0 |
+| <a name="requirement_null"></a> [null](#requirement\_null) | >= 3.2.0, < 4.0.0 |
+| <a name="requirement_random"></a> [random](#requirement\_random) | >= 3.7.0, < 4.0.0 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_local"></a> [local](#provider\_local) | 2.5.3 |
+| <a name="provider_null"></a> [null](#provider\_null) | 3.2.4 |
 | <a name="provider_random"></a> [random](#provider\_random) | 3.7.2 |
 
 ## Modules
@@ -28,14 +28,13 @@ No modules.
 
 | Name | Type |
 |------|------|
-| [local_file.example](https://registry.terraform.io/providers/hashicorp/local/latest/docs/resources/file) | resource |
+| [null_resource.example](https://registry.terraform.io/providers/hashicorp/null/latest/docs/resources/resource) | resource |
 | [random_id.example](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/id) | resource |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_custom_configuration"></a> [custom\_configuration](#input\_custom\_configuration) | Custom configuration object for advanced settings | <pre>object({<br>    setting_a = string<br>    setting_b = number<br>    setting_c = bool<br>  })</pre> | <pre>{<br>  "setting_a": "default-value",<br>  "setting_b": 10,<br>  "setting_c": false<br>}</pre> | no |
 | <a name="input_enable_advanced_features"></a> [enable\_advanced\_features](#input\_enable\_advanced\_features) | Enable advanced features of the module | `bool` | `false` | no |
 | <a name="input_environment"></a> [environment](#input\_environment) | Environment name (e.g., dev, staging, prod) | `string` | n/a | yes |
 | <a name="input_output_directory"></a> [output\_directory](#input\_output\_directory) | The directory where generated files will be placed | `string` | `"."` | no |

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
+    ":dependencyDashboard",
+    ":semanticCommits"
+  ],
+  "schedule": ["0 2 * * *"],
+  "timezone": "Europe/London",
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 5,
+  "enabledManagers": [
+    "terraform",
+    "terraform-version",
+    "github-actions",
+    "pre-commit",
+    "npm",
+    "dockerfile",
+    "docker-compose",
+    "regex"
+  ],
+  "terraform": {
+    "fileMatch": [
+      "\\.tf$",
+      "\\.tfvars$"
+    ]
+  },
+  "packageRules": [
+    {
+      "matchManagers": ["terraform"],
+      "groupName": "Terraform providers"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions"
+    },
+    {
+      "matchManagers": ["pre-commit"],
+      "groupName": "Pre-commit hooks"
+    },
+    {
+      "matchManagers": ["npm"],
+      "groupName": "NPM dependencies"
+    },
+    {
+      "matchManagers": ["dockerfile", "docker-compose"],
+      "groupName": "Docker dependencies"
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"]
+  },
+  "regexManagers": [
+    {
+      "fileMatch": ["setup\\.ps1$", "setup\\.sh$"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s.*?version.*?[\"'](?<currentValue>.*?)[\"']"
+      ]
+    }
+  ]
+}

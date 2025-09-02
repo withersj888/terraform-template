@@ -22,16 +22,21 @@ resource "random_id" "example" {
   }
 }
 
-# Example local file resource to demonstrate functionality
-resource "local_file" "example" {
-  content = templatefile("${path.module}/templates/example.tpl", {
+# Example null resource with local-exec provisioner to demonstrate functionality
+resource "null_resource" "example" {
+  triggers = {
     environment              = var.environment
     project_name             = var.project_name
     random_id                = random_id.example.hex
     enable_advanced_features = var.enable_advanced_features
-    custom_configuration     = var.custom_configuration
-    tags                     = local.common_tags
-  })
+    timestamp                = timestamp()
+  }
 
-  filename = "${var.output_directory}/generated_example.txt"
+  provisioner "local-exec" {
+    command = "echo 'Module: ${local.name_prefix} | Random ID: ${random_id.example.hex} | Advanced: ${var.enable_advanced_features}' > ${var.output_directory}/module_output.txt"
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }

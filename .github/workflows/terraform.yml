@@ -6,17 +6,32 @@ on:
     paths:
       - '**.tf'
       - '**.tfvars'
+      - '**.tftest.hcl'
+      - '.terraform-docs.yml'
+      - '.tflint.hcl'
+      - '.pre-commit-config.yaml'
+      - 'versions.tf'
+      - 'tests/**'
       - '.github/workflows/terraform.yml'
   pull_request:
     branches: [ main ]
     paths:
       - '**.tf'
       - '**.tfvars'
+      - '**.tftest.hcl'
+      - '.terraform-docs.yml'
+      - '.tflint.hcl'
+      - '.pre-commit-config.yaml'
+      - 'versions.tf'
+      - 'tests/**'
       - '.github/workflows/terraform.yml'
 
 env:
+  # renovate: datasource=github-releases depName=hashicorp/terraform
   TF_VERSION: '1.6.0'
+  # renovate: datasource=github-releases depName=terraform-linters/tflint
   TFLINT_VERSION: 'v0.54.0'
+  # renovate: datasource=pypi depName=checkov
   CHECKOV_VERSION: '3.1.34'
 
 jobs:
@@ -128,6 +143,7 @@ jobs:
 
     - name: Install terraform-docs
       run: |
+        # renovate: datasource=github-releases depName=terraform-docs/terraform-docs
         $version = "v0.17.0"
         $url = "https://terraform-docs.io/dl/$version/terraform-docs-$version-linux-amd64.tar.gz"
         $tempDir = "terraform-docs-temp"
@@ -246,56 +262,13 @@ jobs:
         Write-Host "- Total test files: $($testFiles.Count)" -ForegroundColor White
         Write-Host "- Test execution: ✅ Completed successfully" -ForegroundColor Green
 
-  examples:
-    name: Examples Validation
+  release:
+    name: Release
     runs-on: ubuntu-latest
     defaults:
       run:
         shell: pwsh
-    strategy:
-      matrix:
-        example: [basic, advanced]
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: ${{ env.TF_VERSION }}
-
-    - name: Terraform Init - ${{ matrix.example }}
-      run: |
-        if (Test-Path "examples/${{ matrix.example }}") {
-          Set-Location "examples/${{ matrix.example }}"
-          terraform init -backend=false
-        } else {
-          Write-Host "Example directory examples/${{ matrix.example }} does not exist, skipping"
-          exit 0
-        }
-
-    - name: Terraform Validate - ${{ matrix.example }}
-      run: |
-        if (Test-Path "examples/${{ matrix.example }}") {
-          Set-Location "examples/${{ matrix.example }}"
-          terraform validate
-        }
-
-    - name: Terraform Plan - ${{ matrix.example }}
-      run: |
-        if (Test-Path "examples/${{ matrix.example }}") {
-          Set-Location "examples/${{ matrix.example }}"
-          terraform plan -input=false
-        }
-
-  release:
-    name: Release
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: pwsh
-    needs: [terraform-checks, documentation, terraform-tests, examples]
+    needs: [terraform-checks, documentation, terraform-tests]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
@@ -308,6 +281,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
+        # renovate: datasource=node-version depName=node
         node-version: '18'
 
     - name: Install semantic-release

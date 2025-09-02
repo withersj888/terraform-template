@@ -24,20 +24,6 @@ variable "enable_advanced_features" {
   default     = false
 }
 
-variable "custom_configuration" {
-  description = "Custom configuration object for advanced settings"
-  type = object({
-    setting_a = string
-    setting_b = number
-    setting_c = bool
-  })
-  default = {
-    setting_a = "default-value"
-    setting_b = 10
-    setting_c = false
-  }
-}
-
 variable "tags" {
   description = "Additional tags to apply to all resources"
   type        = map(string)
