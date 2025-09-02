@@ -125,10 +125,39 @@ jobs:
       run: |
         $version = "v0.17.0"
         $url = "https://terraform-docs.io/dl/$version/terraform-docs-$version-windows-amd64.zip"
-        Invoke-WebRequest -Uri $url -OutFile "terraform-docs.zip"
-        Expand-Archive -Path "terraform-docs.zip" -DestinationPath "."
-        $env:PATH += ";$PWD"
-        terraform-docs --version
+        $tempDir = "terraform-docs-temp"
+
+        try {
+          # Download and extract to temporary directory
+          Write-Host "Downloading terraform-docs $version..." -ForegroundColor Blue
+          Invoke-WebRequest -Uri $url -OutFile "terraform-docs.zip"
+
+          Write-Host "Extracting to temporary directory..." -ForegroundColor Blue
+          New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+          Expand-Archive -Path "terraform-docs.zip" -DestinationPath $tempDir -Force
+
+          # Copy only the executable to current directory
+          Write-Host "Installing terraform-docs executable..." -ForegroundColor Blue
+          Copy-Item -Path "$tempDir\terraform-docs.exe" -Destination "." -Force
+
+          # Clean up temporary files
+          Write-Host "Cleaning up temporary files..." -ForegroundColor Blue
+          Remove-Item -Path "terraform-docs.zip" -Force
+          Remove-Item -Path $tempDir -Recurse -Force
+
+          # Add current directory to PATH and verify installation
+          $env:PATH = "$PWD;$env:PATH"
+          # Also set PATH for subsequent steps in the job
+          "$PWD" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+          Write-Host "Verifying installation..." -ForegroundColor Blue
+          terraform-docs --version
+          Write-Host "✅ terraform-docs installed successfully!" -ForegroundColor Green
+        }
+        catch {
+          Write-Host "❌ Failed to install terraform-docs: $($_.Exception.Message)" -ForegroundColor Red
+          exit 1
+        }
 
     - name: Render terraform docs
       run: |
