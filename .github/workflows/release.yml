@@ -1,0 +1,57 @@
+name: CD - Release
+
+on:
+  workflow_run:
+    workflows: ["Terraform Module CI"]
+    types:
+      - completed
+    branches: [main]
+
+env:
+  # renovate: datasource=node-version depName=node
+  NODE_VERSION: '18'
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: Install semantic-release
+      run: |
+        Write-Host "📦 Installing semantic-release dependencies..." -ForegroundColor Blue
+        npm install -g semantic-release
+        npm install -g @semantic-release/changelog
+        npm install -g @semantic-release/git
+
+    - name: Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        Write-Host "🚀 Running semantic-release..." -ForegroundColor Blue
+        semantic-release
+
+    - name: Release Summary
+      if: always()
+      run: |
+        Write-Host "📊 Release Summary:" -ForegroundColor Blue
+        Write-Host "- Workflow triggered by: ${{ github.event.workflow_run.name }}" -ForegroundColor White
+        Write-Host "- CI status: ${{ github.event.workflow_run.conclusion }}" -ForegroundColor White
+        if ($env:GITHUB_EVENT_NAME -eq "workflow_run") {
+          Write-Host "✅ Release process completed" -ForegroundColor Green
+        }

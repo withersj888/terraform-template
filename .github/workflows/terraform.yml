@@ -2,7 +2,7 @@ name: Terraform Module CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ develop ]
     paths:
       - '**.tf'
       - '**.tfvars'
@@ -103,8 +103,17 @@ jobs:
     - name: Upload Checkov results to GitHub Advanced Security
       uses: github/codeql-action/upload-sarif@v3
       if: always() && hashFiles('reports/checkov.sarif') != ''
+      continue-on-error: true
       with:
         sarif_file: reports/checkov.sarif
+
+    - name: Upload Checkov results as artifact (fallback)
+      uses: actions/upload-artifact@v4
+      if: always() && hashFiles('reports/checkov.sarif') != ''
+      with:
+        name: checkov-results
+        path: reports/checkov.sarif
+        retention-days: 30
 
     - name: Run tfsec
       uses: aquasecurity/tfsec-action@v1.0.3
@@ -127,8 +136,17 @@ jobs:
     - name: Upload tfsec results to GitHub Advanced Security
       uses: github/codeql-action/upload-sarif@v3
       if: always() && hashFiles('reports/tfsec.sarif') != ''
+      continue-on-error: true
       with:
         sarif_file: reports/tfsec.sarif
+
+    - name: Upload tfsec results as artifact (fallback)
+      uses: actions/upload-artifact@v4
+      if: always() && hashFiles('reports/tfsec.sarif') != ''
+      with:
+        name: tfsec-results
+        path: reports/tfsec.sarif
+        retention-days: 30
 
   documentation:
     name: Documentation Check
@@ -261,36 +279,3 @@ jobs:
         $testFiles = @(Get-ChildItem -Path "tests" -Filter "*.tftest.hcl")
         Write-Host "- Total test files: $($testFiles.Count)" -ForegroundColor White
         Write-Host "- Test execution: ✅ Completed successfully" -ForegroundColor Green
-
-  release:
-    name: Release
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: pwsh
-    needs: [terraform-checks, documentation, terraform-tests]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        token: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        # renovate: datasource=node-version depName=node
-        node-version: '18'
-
-    - name: Install semantic-release
-      run: |
-        npm install -g semantic-release
-        npm install -g @semantic-release/changelog
-        npm install -g @semantic-release/git
-
-    - name: Release
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: semantic-release
