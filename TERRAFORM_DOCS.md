@@ -38,7 +38,7 @@ No modules.
 | <a name="input_custom_configuration"></a> [custom\_configuration](#input\_custom\_configuration) | Custom configuration object for advanced settings | <pre>object({<br>    setting_a = string<br>    setting_b = number<br>    setting_c = bool<br>  })</pre> | <pre>{<br>  "setting_a": "default-value",<br>  "setting_b": 10,<br>  "setting_c": false<br>}</pre> | no |
 | <a name="input_enable_advanced_features"></a> [enable\_advanced\_features](#input\_enable\_advanced\_features) | Enable advanced features of the module | `bool` | `false` | no |
 | <a name="input_environment"></a> [environment](#input\_environment) | Environment name (e.g., dev, staging, prod) | `string` | n/a | yes |
-| <a name="input_output_directory"></a> [output\_directory](#input\_output\_directory) | The directory where generated files will be placed | `string` | `"/tmp"` | no |
+| <a name="input_output_directory"></a> [output\_directory](#input\_output\_directory) | The directory where generated files will be placed | `string` | `"."` | no |
 | <a name="input_project_name"></a> [project\_name](#input\_project\_name) | Name of the project | `string` | n/a | yes |
 | <a name="input_tags"></a> [tags](#input\_tags) | Additional tags to apply to all resources | `map(string)` | `{}` | no |
 

@@ -192,6 +192,15 @@ jobs:
     - name: Terraform Init
       run: terraform init -backend=false
 
+    - name: Display Terraform and Provider Information
+      run: |
+        Write-Host "🔍 Terraform and Provider Information:" -ForegroundColor Blue
+        terraform version
+        Write-Host "`nProvider versions:" -ForegroundColor Blue
+        terraform providers
+        Write-Host "`nModule validation:" -ForegroundColor Blue
+        terraform validate
+
     - name: Check for test files
       run: |
         Write-Host "🔍 Checking for Terraform test files..." -ForegroundColor Blue
@@ -208,12 +217,21 @@ jobs:
     - name: Run Terraform Tests
       run: |
         Write-Host "🧪 Running Terraform native tests..." -ForegroundColor Blue
-        terraform test -verbose
 
-        if ($LASTEXITCODE -eq 0) {
-          Write-Host "✅ All Terraform tests passed!" -ForegroundColor Green
-        } else {
-          Write-Host "❌ Some Terraform tests failed" -ForegroundColor Red
+        try {
+          terraform test -verbose
+
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "✅ All Terraform tests passed!" -ForegroundColor Green
+          } else {
+            Write-Host "❌ Some Terraform tests failed (Exit code: $LASTEXITCODE)" -ForegroundColor Red
+            Write-Host "Check the test output above for details" -ForegroundColor Yellow
+            exit 1
+          }
+        }
+        catch {
+          Write-Host "❌ Terraform test execution failed: $($_.Exception.Message)" -ForegroundColor Red
+          Write-Host "This may indicate a configuration or environment issue" -ForegroundColor Yellow
           exit 1
         }
 
