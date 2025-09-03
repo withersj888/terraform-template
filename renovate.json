@@ -5,7 +5,7 @@
     ":dependencyDashboard",
     ":semanticCommits"
   ],
-  "schedule": ["0 2 * * *"],
+  "schedule": ["at 02:00"],
   "timezone": "Europe/London",
   "labels": ["dependencies"],
   "prConcurrentLimit": 5,
